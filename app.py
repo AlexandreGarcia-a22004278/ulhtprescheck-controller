@@ -8,7 +8,8 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-CORS(app, resources={r"/*": {"origins": "http://localhost:5000"}})
+app.config['BACKEND_URL'] = os.environ.get('BACKEND_URL') or 'http://localhost:5000'
+CORS(app, resources={r"/*": {"origins": app.config['BACKEND_URL']}})
 
 
 @app.route('/arduino', methods=['GET'])
@@ -21,6 +22,7 @@ def arduino_leitor():
             shell=True,
             input=None,
         )
+        print(output.decode("utf-8"))
         token = jwt.encode(payload=json.loads(output.decode("utf-8")),
                            key=app.config['SECRET_KEY'],
                            algorithm='HS256')
@@ -28,7 +30,7 @@ def arduino_leitor():
         return jsonify(token=token), 200
     except Exception as e:
         print(str(e))
-        return 'Ocorreu um problema na leitura do arduino', 500
+        return jsonify(error='Ocorreu um problema na leitura do arduino'), 500
 
 
 if __name__ == '__main__':

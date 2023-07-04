@@ -1,26 +1,43 @@
 import sys
-import serial
 import json
+import serial
 
-# Conecta ao Arduino
-try:
-    ser = serial.Serial('COM3', 9600)
-    # Leia a resposta do Arduino
-    response = ser.readline().decode('utf-8').rstrip()
-    # Guarda o UDID do Arduino na variável identifier
-    identifier = response
-except Exception as e:
-    print("Não existe comunicação com o Arduino. Verifique as configurações. Porta: COM3 / Canal: 9600")
-    print(e)
-    input("Pressione Enter para terminar...")
-    sys.exit()
 
-# Loop principal
-while True:
-    # Verifica se há dados disponíveis no buffer de recepção do Arduino
+def connect_to_arduino(port, baud_rate):
+    try:
+        ser = serial.Serial(port, baud_rate)
+        response = ser.readline().decode('utf-8').rstrip()
+        identifier = '123'  # TODO: Mudar para o identificador do Arduino
+        return ser, identifier
+    except Exception as e:
+        print("Não existe comunicação com o Arduino. Verifique as configurações. Porta: {} / Canal: {}".format(port,
+                                                                                                               baud_rate))
+        print(e)
+        input("Pressione Enter para terminar...")
+        sys.exit()
+
+
+def read_data_from_arduino(ser):
     if ser.in_waiting > 0:
-        # Lê uma linha de dados do Arduino e remove a nova linha
         data = ser.readline().decode('utf-8').rstrip()
-        payload = {"identifier": identifier, "uid": data}
-        print(json.dumps(payload))
-        break
+        return data
+    else:
+        return None
+
+
+def main():
+    port = 'COM3'
+    baud_rate = 9600
+
+    ser, identifier = connect_to_arduino(port, baud_rate)
+
+    while True:
+        data = read_data_from_arduino(ser)
+        if data is not None:
+            payload = {"identifier": identifier, "uid": data}
+            print(json.dumps(payload))
+            break
+
+
+if __name__ == "__main__":
+    main()
