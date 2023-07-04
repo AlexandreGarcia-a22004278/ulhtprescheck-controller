@@ -22,8 +22,13 @@ def arduino_leitor():
             shell=True,
             input=None,
         )
-        print(output.decode("utf-8"))
-        token = jwt.encode(payload=json.loads(output.decode("utf-8")),
+
+        json_data = json.loads(output.decode("utf-8"))
+
+        if json_data['error']:
+            raise Exception(json_data['message'])
+
+        token = jwt.encode(payload=json_data,
                            key=app.config['SECRET_KEY'],
                            algorithm='HS256')
 

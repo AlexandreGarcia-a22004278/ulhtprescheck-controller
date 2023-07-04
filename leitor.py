@@ -7,14 +7,14 @@ def connect_to_arduino(port, baud_rate):
     try:
         ser = serial.Serial(port, baud_rate)
         response = ser.readline().decode('utf-8').rstrip()
-        identifier = '123'  # TODO: Mudar para o identificador do Arduino
+        identifier = '123'  # TODO: Mudar para o identificador do Arduino 'response'
         return ser, identifier
     except Exception as e:
-        print("Não existe comunicação com o Arduino. Verifique as configurações. Porta: {} / Canal: {}".format(port,
-                                                                                                               baud_rate))
-        print(e)
-        input("Pressione Enter para terminar...")
-        sys.exit()
+        print(json.dumps({
+            "error": True,
+            "message": f"Não existe comunicação com o Arduino. Verifique as configurações. Porta: {port} / Canal: {baud_rate}"
+        }))
+        return None, None
 
 
 def read_data_from_arduino(ser):
@@ -31,11 +31,13 @@ def main():
 
     ser, identifier = connect_to_arduino(port, baud_rate)
 
+    if not ser or not identifier:
+        sys.exit()
+
     while True:
         data = read_data_from_arduino(ser)
         if data is not None:
-            payload = {"identifier": identifier, "uid": data}
-            print(json.dumps(payload))
+            print(json.dumps({"identifier": identifier, "uid": data, "error": False}))
             break
 
 
