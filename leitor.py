@@ -1,13 +1,16 @@
+import os
 import sys
 import json
 import serial
+import requests
+import jwt
 
 
 def connect_to_arduino(port, baud_rate):
     try:
         ser = serial.Serial(port, baud_rate)
         response = ser.readline().decode('utf-8').rstrip()
-        identifier = '123'  # TODO: Mudar para o identificador do Arduino 'response'
+        identifier = 'ULHT-A-F23'  # TODO: Mudar para o identificador do Arduino 'response'
         return ser, identifier
     except Exception as e:
         print(json.dumps({
@@ -25,20 +28,47 @@ def read_data_from_arduino(ser):
         return None
 
 
+def send_data(backend_url, tipo, identifier, data):
+    match tipo:
+        case 'registo':
+            print(json.dumps({"identifier": identifier, "uid": data, "error": False}))
+            sys.exit()
+
+        case 'aula':
+            print(json.dumps({"identifier": identifier, "uid": data, "error": False}))
+            token = jwt.encode(payload={"identifier": identifier, "uid": data},
+                               key=os.environ.get('SECRET_KEY'),
+                               algorithm='HS256')
+            try:
+                sent_data = requests.put(f"{backend_url}/presencas/arduino", json={'token': token})
+                sent_data.close()
+            except ConnectionError:
+                print(json.dumps({
+                    "error": True,
+                    "message": f"Não existe comunicação com o backend. Verifique as configurações. URL: {backend_url}"
+                }))
+
+        case _:
+            sys.exit()
+
+
 def main():
     port = 'COM3'
     baud_rate = 9600
+    tipo = sys.argv[1]
+    backend_url = 'http://localhost:5000'
 
     ser, identifier = connect_to_arduino(port, baud_rate)
-
     if not ser or not identifier:
         sys.exit()
 
     while True:
         data = read_data_from_arduino(ser)
-        if data is not None:
-            print(json.dumps({"identifier": identifier, "uid": data, "error": False}))
-            break
+
+        if data is None:
+            continue
+
+        send_data(backend_url, tipo, identifier, data)
 
 
 if __name__ == "__main__":
