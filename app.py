@@ -37,7 +37,6 @@ def arduino_leitor(tipo):
             case 'aula':
                 subprocess.run(['python', os.path.join(os.path.dirname(__file__), 'leitor.py'), 'aula'],
                                stderr=subprocess.STDOUT,
-                               timeout=20,
                                shell=True,
                                input=None)
                 return jsonify(message='Leitura iniciada'), 200
@@ -52,6 +51,7 @@ def arduino_leitor(tipo):
                 )
 
                 json_data = json.loads(output.decode("utf-8"))
+                print(json_data)
 
                 if json_data['error']:
                     raise Exception(json_data['message'])
@@ -81,4 +81,8 @@ def arduino_encerrar():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001)
+    try:
+        app.run(host='0.0.0.0', port=5001)
+    finally:
+        os.system(f"pkill -f {os.path.join(os.path.dirname(__file__), 'leitor.py')}")
+        exit(0)

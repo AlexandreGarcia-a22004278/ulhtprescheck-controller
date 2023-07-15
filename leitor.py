@@ -4,6 +4,9 @@ import json
 import serial
 import requests
 import jwt
+from dotenv import load_dotenv
+
+load_dotenv('.flaskenv')
 
 
 def connect_to_arduino(port, baud_rate):
@@ -41,6 +44,7 @@ def send_data(backend_url, tipo, identifier, data):
                                algorithm='HS256')
             try:
                 sent_data = requests.put(f"{backend_url}/presencas/arduino", json={'token': token})
+                print(sent_data.status_code, sent_data.text)
                 sent_data.close()
             except ConnectionError:
                 print(json.dumps({
@@ -72,4 +76,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print('Interrupted')
+        sys.exit()
+    finally:
+        sys.exit()
