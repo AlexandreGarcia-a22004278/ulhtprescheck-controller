@@ -14,11 +14,12 @@ CORS(app, resources={r"/*": {"origins": app.config['BACKEND_URL']}})
 
 @app.before_request
 def check_auth():
-    if not request.headers.get('Authorization'):
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith("Bearer "):
         return jsonify(error='Não autorizado'), 401
 
     try:
-        token = request.headers.get('Authorization').split(' ')[1]
+        token = auth_header.split(' ')[1]
         payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
 
         if payload['identifier'] != os.environ.get('BACKEND_AUTH_TOKEN'):
