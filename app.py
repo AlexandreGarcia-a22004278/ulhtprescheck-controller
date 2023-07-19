@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import platform
 
 import jwt
 from flask import Flask, jsonify, request
@@ -10,6 +11,16 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['BACKEND_URL'] = os.environ.get('BACKEND_URL')
 CORS(app, resources={r"/*": {"origins": app.config['BACKEND_URL']}})
+
+
+def kill_reading_file():
+    script_path = os.path.join(os.path.dirname(__file__), 'leitor.py')
+    current_os = platform.system()
+
+    if current_os == 'Windows':
+        os.system(f"taskkill /im {script_path} /f /t")
+    elif current_os == 'Linux' or current_os == 'Darwin':  # Unix-based systems (Linux and macOS)
+        os.system(f"pkill -f {script_path}")
 
 
 @app.before_request
@@ -74,7 +85,7 @@ def arduino_leitor(tipo):
 @app.route('/arduino/encerrar', methods=['GET'])
 def arduino_encerrar():
     try:
-        os.system(f"pkill -f {os.path.join(os.path.dirname(__file__), 'leitor.py')}")
+        kill_reading_file()
         return jsonify(message='Leitura do arduino encerrada'), 200
     except Exception as e:
         print(str(e))
@@ -85,5 +96,4 @@ if __name__ == '__main__':
     try:
         app.run(host='0.0.0.0', port=5001)
     finally:
-        os.system(f"pkill -f {os.path.join(os.path.dirname(__file__), 'leitor.py')}")
-        exit(0)
+        kill_reading_file()
