@@ -12,10 +12,8 @@ load_dotenv('.flaskenv')
 def connect_to_arduino(port, baud_rate):
     try:
         ser = serial.Serial(port, baud_rate)
-        response = ser.readline().decode('utf-8').rstrip()
-        identifier = 'ULHT-A-F23'  # TODO: Mudar para o identificador do Arduino 'response'
-        return ser, identifier
-    except Exception as e:
+        return ser
+    except ConnectionError as e:
         print(json.dumps({
             "error": True,
             "message": f"Não existe comunicação com o Arduino. Verifique as configurações. Porta: {port} / Canal: {baud_rate}"
@@ -60,10 +58,11 @@ def main():
     port = 'COM3'
     baud_rate = 9600
     tipo = sys.argv[1]
-    backend_url = 'http://localhost:5000'
+    backend_url = os.environ.get('BACKEND_URL')
+    identifier = os.environ.get('IDENTIFIER')
 
-    ser, identifier = connect_to_arduino(port, baud_rate)
-    if not ser or not identifier:
+    ser = connect_to_arduino(port, baud_rate)
+    if not ser:
         sys.exit()
 
     while True:
